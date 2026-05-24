@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+  <!-- ── Identity ── -->
+  <key>Label</key>
+  <string>com.user.coinportal</string>
+
+  <!-- ── What to run ── -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>/Users/max/coinportal/dist/indexer.js</string>
+  </array>
+
+  <!-- ── Working directory ── -->
+  <key>WorkingDirectory</key>
+  <string>/Users/max/coinportal</string>
+
+  <!-- ── Environment variables ── -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>NODE_ENV</key>
+    <string>production</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <!-- ── Auto-start on boot ── -->
+  <key>RunAtLoad</key>
+  <true/>
+
+  <!-- ── Only restart on crash (exit code ≠ 0); a clean exit(0) stops the loop ── -->
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+
+  <!-- ── Wait 10 s before respawning after a crash ── -->
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <!-- ── Logs ── -->
+  <key>StandardOutPath</key>
+  <string>/Users/max/coinportal/logs/indexer.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/max/coinportal/logs/indexer.stderr.log</string>
+
+</dict>
+</plist>
