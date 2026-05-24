@@ -19,6 +19,306 @@
   "tradeLog": [
     {
       "id": 1,
+      "botName": "Alpha",
+      "symbol": "SKMN",
+      "name": "SketchyMoon",
+      "mintAddress": "SketchyMMC2U52XP",
+      "action": "BLOCKED",
+      "reason": "Metadata: holders ≤ 10 (7)",
+      "timestamp": "2026-05-24T13:57:41.432Z"
+    },
+    {
+      "id": 1,
+      "botName": "Gamma",
+      "symbol": "AQUAGOAT",
+      "name": "AquaGoat Finance",
+      "mintAddress": "AquaGoatNJH64NOO",
+      "action": "BLOCKED",
+      "reason": "Metadata: holders ≤ 10 (3)",
+      "timestamp": "2026-05-24T13:57:40.431Z"
+    },
+    {
+      "id": 1,
+      "botName": "Beta",
+      "symbol": "EGC",
+      "name": "EverGrow Coin",
+      "mintAddress": "EverGrow8D37DLEN",
+      "action": "BLOCKED",
+      "reason": "AI veto: score 43 > 40",
+      "timestamp": "2026-05-24T13:57:32.079Z"
+    },
+    {
+      "id": 1,
+      "botName": "Delta",
+      "symbol": "BABYDOGE",
+      "name": "Baby Doge Coin",
+      "mintAddress": "BabyD0geTE52S0UA",
+      "action": "BLOCKED",
+      "reason": "AI veto: score 67 > 40",
+      "timestamp": "2026-05-24T13:57:31.805Z"
+    },
+    {
+      "id": 1,
+      "botName": "Alpha",
+      "symbol": "BABYDOGE",
+      "name": "Baby Doge Coin",
+      "mintAddress": "BabyD0geH4JYJ32U",
+      "action": "BLOCKED",
+      "reason": "Security: liquidity unlocked",
+      "timestamp": "2026-05-24T13:57:31.431Z"
+    },
+    {
+      "id": 1,
+      "botName": "Gamma",
+      "symbol": "SFM",
+      "name": "SafeMoon",
+      "mintAddress": "SafeM00nK9B6HK75",
+      "action": "BLOCKED",
+      "reason": "AI veto: score 50 > 40",
+      "timestamp": "2026-05-24T13:57:27.322Z"
+    },
+    {
+      "id": 1,
+      "botName": "Alpha",
+      "symbol": "BABYDOGE",
+      "name": "Baby Doge Coin",
+      "mintAddress": "BabyD0ge2LXY0GZY",
+      "action": "BLOCKED",
+      "reason": "AI veto: score 43 > 40",
+      "timestamp": "2026-05-24T13:57:21.808Z"
+    },
+    {
+      "id": 1,
+      "botName": "Beta",
+      "symbol": "EGC",
+      "name": "EverGrow Coin",
+      "mintAddress": "EverGrowC1C02SIU",
+      "action": "BLOCKED",
+      "reason": "AI veto: score 67 > 40",
+      "timestamp": "2026-05-24T13:57:19.841Z"
+    },
+    {
+      "id": 1,
+      "botName": "Delta",
+      "symbol": "BABYDOGE",
+      "name": "Baby Doge Coin",
+      "mintAddress": "BabyD0ge71ZTIS21",
+      "action": "BLOCKED",
+      "reason": "Security: mint authority active",
+      "timestamp": "2026-05-24T13:57:16.423Z"
+    },
+    {
+      "id": 1,
+      "botName": "Gamma",
+      "symbol": "AQUAGOAT",
+      "name": "AquaGoat Finance",
+      "mintAddress": "AquaGoatCWQVUZ1D",
+      "action": "BLOCKED",
+      "reason": "Metadata: holders ≤ 10 (3)",
+      "timestamp": "2026-05-24T13:57:13.427Z"
+    },
+    {
+      "id": 1,
+      "botName": "Alpha",
+      "symbol": "AQUAGOAT",
+      "name": "AquaGoat Finance",
+      "mintAddress": "AquaGoatP03RNEKK",
+      "action": "BLOCKED",
+      "reason": "Metadata: holders ≤ 10 (3)",
+      "timestamp": "2026-05-24T13:57:11.430Z"
+    },
+    {
+      "id": 1,
+      "botName": "Beta",
+      "symbol": "SFM",
+      "name": "SafeMoon",
+      "mintAddress": "SafeM00nLMZ7CFJF",
+      "action": "BLOCKED",
+      "reason": "Security: liquidity unlocked",
+      "timestamp": "2026-05-24T13:57:07.439Z"
+    },
+    {
+      "id": 1,
+      "botName": "Alpha",
+      "symbol": "SKMN",
+      "name": "SketchyMoon",
+      "mintAddress": "SketchyMR417BT44",
+      "action": "BLOCKED",
+      "reason": "Metadata: holders ≤ 10 (7)",
+      "timestamp": "2026-05-24T13:57:01.429Z"
+    },
+    {
+      "id": 1,
+      "botName": "Delta",
+      "symbol": "AQUAGOAT",
+      "name": "AquaGoat Finance",
+      "mintAddress": "AquaGoatYYT0BA7C",
+      "action": "BLOCKED",
+      "reason": "Metadata: holders ≤ 10 (3)",
+      "timestamp": "2026-05-24T13:57:01.424Z"
+    },
+    {
+      "id": 1,
+      "botName": "Gamma",
+      "symbol": "BABYDOGE",
+      "name": "Baby Doge Coin",
+      "mintAddress": "BabyD0geVY6SV1BG",
+      "action": "BLOCKED",
+      "reason": "AI veto: score 67 > 40",
+      "timestamp": "2026-05-24T13:57:00.336Z"
+    },
+    {
+      "id": 1,
+      "botName": "Beta",
+      "symbol": "AQUAGOAT",
+      "name": "AquaGoat Finance",
+      "mintAddress": "AquaGoat5TB5K2KQ",
+      "action": "BLOCKED",
+      "reason": "Metadata: holders ≤ 10 (3)",
+      "timestamp": "2026-05-24T13:56:55.428Z"
+    },
+    {
+      "id": 1,
+      "botName": "Alpha",
+      "symbol": "SKMN",
+      "name": "SketchyMoon",
+      "mintAddress": "SketchyM8R5MEV5V",
+      "action": "BLOCKED",
+      "reason": "Metadata: holders ≤ 10 (7)",
+      "timestamp": "2026-05-24T13:56:51.430Z"
+    },
+    {
+      "id": 1,
+      "botName": "Delta",
+      "symbol": "FLOKI",
+      "name": "Floki Inu",
+      "mintAddress": "Fl0k1Inu1GRR326D",
+      "action": "BLOCKED",
+      "reason": "AI veto: score 67 > 40",
+      "timestamp": "2026-05-24T13:56:47.044Z"
+    },
+    {
+      "id": 1,
+      "botName": "Gamma",
+      "symbol": "EGC",
+      "name": "EverGrow Coin",
+      "mintAddress": "EverGrowLU2WF7V1",
+      "action": "BLOCKED",
+      "reason": "AI veto: score 43 > 40",
+      "timestamp": "2026-05-24T13:56:46.769Z"
+    },
+    {
+      "id": 1,
+      "botName": "Beta",
+      "symbol": "SFM",
+      "name": "SafeMoon",
+      "mintAddress": "SafeM00n4R5L9J3C",
+      "action": "BLOCKED",
+      "reason": "Security: mint authority active",
+      "timestamp": "2026-05-24T13:56:43.427Z"
+    },
+    {
+      "id": 1,
+      "botName": "Alpha",
+      "symbol": "SFM",
+      "name": "SafeMoon",
+      "mintAddress": "SafeM00nSPJVDHB6",
+      "action": "BLOCKED",
+      "reason": "Security: liquidity unlocked",
+      "timestamp": "2026-05-24T13:56:41.429Z"
+    },
+    {
+      "id": 1,
+      "botName": "Gamma",
+      "symbol": "EGC",
+      "name": "EverGrow Coin",
+      "mintAddress": "EverGrowU0H6I1JR",
+      "action": "BLOCKED",
+      "reason": "AI veto: score 67 > 40",
+      "timestamp": "2026-05-24T13:56:33.377Z"
+    },
+    {
+      "id": 1,
+      "botName": "Alpha",
+      "symbol": "EGC",
+      "name": "EverGrow Coin",
+      "mintAddress": "EverGrow4ULGCA48",
+      "action": "BLOCKED",
+      "reason": "Security: liquidity unlocked",
+      "timestamp": "2026-05-24T13:56:31.430Z"
+    },
+    {
+      "id": 1,
+      "botName": "Beta",
+      "symbol": "SFM",
+      "name": "SafeMoon",
+      "mintAddress": "SafeM00n1AG47SU1",
+      "action": "BLOCKED",
+      "reason": "Security: mint authority active",
+      "timestamp": "2026-05-24T13:56:31.427Z"
+    },
+    {
+      "id": 1,
+      "botName": "Delta",
+      "symbol": "AQUAGOAT",
+      "name": "AquaGoat Finance",
+      "mintAddress": "AquaGoatS4VUGR5R",
+      "action": "BLOCKED",
+      "reason": "Metadata: holders ≤ 10 (3)",
+      "timestamp": "2026-05-24T13:56:31.424Z"
+    },
+    {
+      "id": 1,
+      "botName": "Alpha",
+      "symbol": "SFM",
+      "name": "SafeMoon",
+      "mintAddress": "SafeM00nWDF6GFKH",
+      "action": "BLOCKED",
+      "reason": "AI veto: score 67 > 40",
+      "timestamp": "2026-05-24T13:56:21.834Z"
+    },
+    {
+      "id": 1,
+      "botName": "Beta",
+      "symbol": "FLOKI",
+      "name": "Floki Inu",
+      "mintAddress": "Fl0k1InuB08RCUT3",
+      "action": "BLOCKED",
+      "reason": "Security: liquidity unlocked",
+      "timestamp": "2026-05-24T13:56:19.428Z"
+    },
+    {
+      "id": 1,
+      "botName": "Gamma",
+      "symbol": "AQUAGOAT",
+      "name": "AquaGoat Finance",
+      "mintAddress": "AquaGoat42F7XW56",
+      "action": "BLOCKED",
+      "reason": "Metadata: holders ≤ 10 (3)",
+      "timestamp": "2026-05-24T13:56:19.426Z"
+    },
+    {
+      "id": 1,
+      "botName": "Delta",
+      "symbol": "EGC",
+      "name": "EverGrow Coin",
+      "mintAddress": "EverGrow7OJWK72R",
+      "action": "BLOCKED",
+      "reason": "Security: liquidity unlocked",
+      "timestamp": "2026-05-24T13:56:16.423Z"
+    },
+    {
+      "id": 1,
+      "botName": "Alpha",
+      "symbol": "AQUAGOAT",
+      "name": "AquaGoat Finance",
+      "mintAddress": "AquaGoatLT376PJC",
+      "action": "BLOCKED",
+      "reason": "Metadata: holders ≤ 10 (3)",
+      "timestamp": "2026-05-24T13:56:11.426Z"
+    },
+    {
+      "id": 1,
       "botName": "Beta",
       "symbol": "SFM",
       "name": "SafeMoon",
@@ -1716,307 +2016,7 @@
       "action": "BLOCKED",
       "reason": "AI veto: score 67 > 40",
       "timestamp": "2026-05-24T13:37:43.122Z"
-    },
-    {
-      "id": 1,
-      "botName": "Delta",
-      "symbol": "FLOKI",
-      "name": "Floki Inu",
-      "mintAddress": "Fl0k1InuP06682MK",
-      "action": "BLOCKED",
-      "reason": "Security: liquidity unlocked",
-      "timestamp": "2026-05-24T13:37:39.740Z"
-    },
-    {
-      "id": 1,
-      "botName": "Gamma",
-      "symbol": "AQUAGOAT",
-      "name": "AquaGoat Finance",
-      "mintAddress": "AquaGoatAZG20301",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (3)",
-      "timestamp": "2026-05-24T13:37:38.193Z"
-    },
-    {
-      "id": 1,
-      "botName": "Alpha",
-      "symbol": "BABYDOGE",
-      "name": "Baby Doge Coin",
-      "mintAddress": "BabyD0ge5WL84BGH",
-      "action": "BLOCKED",
-      "reason": "AI veto: score 67 > 40",
-      "timestamp": "2026-05-24T13:37:35.170Z"
-    },
-    {
-      "id": 1,
-      "botName": "Beta",
-      "symbol": "AQUAGOAT",
-      "name": "AquaGoat Finance",
-      "mintAddress": "AquaGoatBGCAPCKK",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (3)",
-      "timestamp": "2026-05-24T13:37:30.706Z"
-    },
-    {
-      "id": 1,
-      "botName": "Alpha",
-      "symbol": "SKMN",
-      "name": "SketchyMoon",
-      "mintAddress": "SketchyM85RILGI5",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (7)",
-      "timestamp": "2026-05-24T13:37:24.740Z"
-    },
-    {
-      "id": 1,
-      "botName": "Delta",
-      "symbol": "AQUAGOAT",
-      "name": "AquaGoat Finance",
-      "mintAddress": "AquaGoatVTH4IENB",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (3)",
-      "timestamp": "2026-05-24T13:37:24.738Z"
-    },
-    {
-      "id": 1,
-      "botName": "Gamma",
-      "symbol": "SFM",
-      "name": "SafeMoon",
-      "mintAddress": "SafeM00nF3UCBVSU",
-      "action": "BLOCKED",
-      "reason": "Security: liquidity unlocked",
-      "timestamp": "2026-05-24T13:37:24.710Z"
-    },
-    {
-      "id": 1,
-      "botName": "Beta",
-      "symbol": "AQUAGOAT",
-      "name": "AquaGoat Finance",
-      "mintAddress": "AquaGoatATOLG7AE",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (3)",
-      "timestamp": "2026-05-24T13:37:18.703Z"
-    },
-    {
-      "id": 1,
-      "botName": "Alpha",
-      "symbol": "SKMN",
-      "name": "SketchyMoon",
-      "mintAddress": "SketchyM9T2GRH3W",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (7)",
-      "timestamp": "2026-05-24T13:37:14.742Z"
-    },
-    {
-      "id": 1,
-      "botName": "Gamma",
-      "symbol": "SFM",
-      "name": "SafeMoon",
-      "mintAddress": "SafeM00nDP9BMSUH",
-      "action": "BLOCKED",
-      "reason": "Security: liquidity unlocked",
-      "timestamp": "2026-05-24T13:37:11.190Z"
-    },
-    {
-      "id": 1,
-      "botName": "Delta",
-      "symbol": "AQUAGOAT",
-      "name": "AquaGoat Finance",
-      "mintAddress": "AquaGoatHKYGG8O8",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (3)",
-      "timestamp": "2026-05-24T13:37:09.737Z"
-    },
-    {
-      "id": 1,
-      "botName": "Beta",
-      "symbol": "BABYDOGE",
-      "name": "Baby Doge Coin",
-      "mintAddress": "BabyD0ge057CC5TP",
-      "action": "BLOCKED",
-      "reason": "Security: mint authority active",
-      "timestamp": "2026-05-24T13:37:06.701Z"
-    },
-    {
-      "id": 1,
-      "botName": "Alpha",
-      "symbol": "EGC",
-      "name": "EverGrow Coin",
-      "mintAddress": "EverGrowAC6IH4E4",
-      "action": "BLOCKED",
-      "reason": "Security: liquidity unlocked",
-      "timestamp": "2026-05-24T13:37:04.735Z"
-    },
-    {
-      "id": 1,
-      "botName": "Gamma",
-      "symbol": "SKMN",
-      "name": "SketchyMoon",
-      "mintAddress": "SketchyMS0HXAOM7",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (7)",
-      "timestamp": "2026-05-24T13:36:57.689Z"
-    },
-    {
-      "id": 1,
-      "botName": "Beta",
-      "symbol": "EGC",
-      "name": "EverGrow Coin",
-      "mintAddress": "EverGrowP4QFAVSR",
-      "action": "BLOCKED",
-      "reason": "AI veto: score 43 > 40",
-      "timestamp": "2026-05-24T13:36:55.104Z"
-    },
-    {
-      "id": 1,
-      "botName": "Delta",
-      "symbol": "SKMN",
-      "name": "SketchyMoon",
-      "mintAddress": "SketchyMX899V0QM",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (7)",
-      "timestamp": "2026-05-24T13:36:54.737Z"
-    },
-    {
-      "id": 1,
-      "botName": "Alpha",
-      "symbol": "FLOKI",
-      "name": "Floki Inu",
-      "mintAddress": "Fl0k1Inu9QENDNP1",
-      "action": "BLOCKED",
-      "reason": "Security: mint authority active",
-      "timestamp": "2026-05-24T13:36:54.734Z"
-    },
-    {
-      "id": 1,
-      "botName": "Alpha",
-      "symbol": "BABYDOGE",
-      "name": "Baby Doge Coin",
-      "mintAddress": "BabyD0geOPJT77WO",
-      "action": "BLOCKED",
-      "reason": "Security: liquidity unlocked",
-      "timestamp": "2026-05-24T13:36:44.733Z"
-    },
-    {
-      "id": 1,
-      "botName": "Gamma",
-      "symbol": "BABYDOGE",
-      "name": "Baby Doge Coin",
-      "mintAddress": "BabyD0geHRKCPT6N",
-      "action": "BLOCKED",
-      "reason": "Security: liquidity unlocked",
-      "timestamp": "2026-05-24T13:36:44.188Z"
-    },
-    {
-      "id": 1,
-      "botName": "Beta",
-      "symbol": "BABYDOGE",
-      "name": "Baby Doge Coin",
-      "mintAddress": "BabyD0ge0WB45OG9",
-      "action": "BLOCKED",
-      "reason": "AI veto: score 67 > 40",
-      "timestamp": "2026-05-24T13:36:43.087Z"
-    },
-    {
-      "id": 1,
-      "botName": "Delta",
-      "symbol": "FLOKI",
-      "name": "Floki Inu",
-      "mintAddress": "Fl0k1Inu4K5AIQAM",
-      "action": "BLOCKED",
-      "reason": "Security: liquidity unlocked",
-      "timestamp": "2026-05-24T13:36:39.736Z"
-    },
-    {
-      "id": 1,
-      "botName": "Alpha",
-      "symbol": "SKMN",
-      "name": "SketchyMoon",
-      "mintAddress": "SketchyMEKUKX3PD",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (7)",
-      "timestamp": "2026-05-24T13:36:34.732Z"
-    },
-    {
-      "id": 1,
-      "botName": "Beta",
-      "symbol": "SFM",
-      "name": "SafeMoon",
-      "mintAddress": "SafeM00nJY6DKSUB",
-      "action": "BLOCKED",
-      "reason": "AI veto: score 67 > 40",
-      "timestamp": "2026-05-24T13:36:31.087Z"
-    },
-    {
-      "id": 1,
-      "botName": "Gamma",
-      "symbol": "SFM",
-      "name": "SafeMoon",
-      "mintAddress": "SafeM00nSYHA7W2D",
-      "action": "BLOCKED",
-      "reason": "Security: mint authority active",
-      "timestamp": "2026-05-24T13:36:30.687Z"
-    },
-    {
-      "id": 1,
-      "botName": "Delta",
-      "symbol": "FLOKI",
-      "name": "Floki Inu",
-      "mintAddress": "Fl0k1InuWAFHSIAU",
-      "action": "BLOCKED",
-      "reason": "AI veto: score 67 > 40",
-      "timestamp": "2026-05-24T13:36:25.175Z"
-    },
-    {
-      "id": 1,
-      "botName": "Alpha",
-      "symbol": "FLOKI",
-      "name": "Floki Inu",
-      "mintAddress": "Fl0k1Inu6FDGUGD0",
-      "action": "BLOCKED",
-      "reason": "Security: liquidity unlocked",
-      "timestamp": "2026-05-24T13:36:24.738Z"
-    },
-    {
-      "id": 1,
-      "botName": "Beta",
-      "symbol": "EGC",
-      "name": "EverGrow Coin",
-      "mintAddress": "EverGrowWKPD3P6D",
-      "action": "BLOCKED",
-      "reason": "AI veto: score 67 > 40",
-      "timestamp": "2026-05-24T13:36:19.083Z"
-    },
-    {
-      "id": 1,
-      "botName": "Gamma",
-      "symbol": "SKMN",
-      "name": "SketchyMoon",
-      "mintAddress": "SketchyMOHME4KVS",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (7)",
-      "timestamp": "2026-05-24T13:36:17.186Z"
-    },
-    {
-      "id": 1,
-      "botName": "Alpha",
-      "symbol": "FLOKI",
-      "name": "Floki Inu",
-      "mintAddress": "Fl0k1Inu3BMACSX3",
-      "action": "BLOCKED",
-      "reason": "AI veto: score 67 > 40",
-      "timestamp": "2026-05-24T13:36:15.102Z"
-    },
-    {
-      "id": 1,
-      "botName": "Delta",
-      "symbol": "SKMN",
-      "name": "SketchyMoon",
-      "mintAddress": "SketchyMG0AOUCVK",
-      "action": "BLOCKED",
-      "reason": "Metadata: holders ≤ 10 (7)",
-      "timestamp": "2026-05-24T13:36:09.725Z"
     }
   ],
-  "lastUpdated": "2026-05-24T13:56:07.424Z"
+  "lastUpdated": "2026-05-24T13:57:41.432Z"
 }
