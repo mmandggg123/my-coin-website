@@ -100,14 +100,14 @@ interface TokenRiskAnalysis {
 }
 
 // Queues for Agent Pipeline
-const buyQueue: (TokenData & { currentPrice: number })[] = [];
-const executionQueue: { token: TokenData & { currentPrice: number }; riskScore: number }[] = [];
+let buyQueue: (TokenData & { currentPrice: number })[] = [];
+let executionQueue: { token: TokenData & { currentPrice: number }; riskScore: number }[] = [];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Logger
 // ─────────────────────────────────────────────────────────────────────────────
 
-type LogLevel = "SCOUT" | "PREDICT" | "BUYER" | "SELLER" | "INFO" | "WARN" | "ERROR";
+type LogLevel = "SCOUT" | "PREDICT" | "BUYER" | "SELLER" | "INFO" | "WARN" | "ERROR" | "SYSTEM";
 
 function log(level: LogLevel, msg: string): void {
   const ts   = new Date().toISOString();
@@ -183,7 +183,7 @@ function executeBuy(token: TokenData & { currentPrice: number }, riskScore: numb
       totalSpentSol: amountSol,
       boughtAt:      new Date().toISOString(),
       riskScore,
-      mintAddress:   token.mintAddress,
+      mintAddress:    token.mintAddress,
     });
   }
 
@@ -246,23 +246,58 @@ function logBlockedTrade(token: TokenData, reason: string): void {
 function startApiServer(): void {
   const server = http.createServer((req, res) => {
     res.setHeader("Access-Control-Allow-Origin",  "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     res.setHeader("Content-Type", "application/json");
 
     if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
     const url = req.url?.split("?")[0];
 
-    if (url === "/api/wallet") {
+    if (url === "/api/wallet" && req.method === "GET") {
       res.writeHead(200);
       res.end(JSON.stringify(wallet));
       return;
     }
-    if (url === "/api/health") {
+    
+    // Administrative Ledger Clearing Endpoint
+    if (url === "/api/reset" && req.method === "POST") {
+      try {
+        log("SYSTEM", "Administrative global console reset triggered. Flushing metrics storage...");
+        
+        // 1. Reset state variables back to standard simulation defaults
+        wallet = {
+          solBalance: 100.0000,
+          startingSOL: 100.0000,
+          tradeCount: 0,
+          positions: [],
+          tradeLog: [],
+          lastUpdated: new Date().toISOString()
+        };
+
+        // 2. Wipe agent queues clean to protect against trailing trades filling
+        buyQueue = [];
+        executionQueue = [];
+
+        // 3. Persist structural changes safely down into our local database
+        saveWallet(wallet);
+
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true, message: "Simulation ledger reset successfully" }));
+        return;
+      } catch (err) {
+        log("ERROR", `Global administrative reset exception caught: ${err instanceof Error ? err.message : String(err)}`);
+        res.writeHead(500);
+        res.end(JSON.stringify({ success: false, error: "Internal operational reset failure" }));
+        return;
+      }
+    }
+
+    if (url === "/api/health" && req.method === "GET") {
       res.writeHead(200);
       res.end(JSON.stringify({ status: "ok", uptime: process.uptime() }));
       return;
     }
+    
     res.writeHead(404);
     res.end(JSON.stringify({ error: "Not found" }));
   });
@@ -280,7 +315,7 @@ const MOCK_TOKENS: TokenData[] = [
   { name: "Baby Doge Coin",   symbol: "BABYDOGE",  mintAddress: "BabyD0geXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 420_000_000_000_000, decimals: 9, creatorAddress: "Creator1XXX", holders: 142_000, liquidityUsd: 3_200_000, ageHours: 720  },
   { name: "SketchyMoon",      symbol: "SKMN",      mintAddress: "SketchyMoon1XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 1_000_000_000_000,   decimals: 9, creatorAddress: "Creator2XXX", holders: 7,       liquidityUsd: 180,        ageHours: 0.5  },
   { name: "Floki Inu",        symbol: "FLOKI",     mintAddress: "Fl0k1InuXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 10_000_000_000_000,  decimals: 9, creatorAddress: "Creator3XXX", holders: 89_000,  liquidityUsd: 920_000,   ageHours: 2160 },
-  { name: "AquaGoat Finance", symbol: "AQUAGOAT",  mintAddress: "AquaGoatXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 100_000_000_000,     decimals: 9, creatorAddress: "Creator4XXX", holders: 3,       liquidityUsd: 62,        ageHours: 1,    metadata: { website: null } },
+  { name: "AquaGoat Finance", symbol: "AQUAGOAT",  mintAddress: "AquaGoatXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 100_000_000_000,      decimals: 9, creatorAddress: "Creator4XXX", holders: 3,       liquidityUsd: 62,        ageHours: 1,    metadata: { website: null } },
   { name: "EverGrow Coin",    symbol: "EGC",       mintAddress: "EverGrowXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 1_000_000_000_000_000, decimals: 9, creatorAddress: "Creator5XXX", holders: 54_000, liquidityUsd: 450_000,   ageHours: 4320 },
   { name: "SafeMoon",         symbol: "SFM",       mintAddress: "SafeM00nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 1_000_000_000_000,   decimals: 9, creatorAddress: "Creator6XXX", holders: 31_000,  liquidityUsd: 210_000,   ageHours: 960  },
 ];
@@ -341,14 +376,14 @@ async function analyzeTokenWithOllama(token: TokenData): Promise<TokenRiskAnalys
       body:    JSON.stringify({ model: OLLAMA_MODEL, prompt: buildPrompt(token), stream: false }),
       signal:  controller.signal,
     });
-    clearTimeout(timeout);
+    clearInterval(timeout);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const json = (await response.json()) as OllamaResponse;
     const match = json.response.match(/RISK_SCORE:\s*(\d{1,3})/i);
     const riskScore = match ? parseInt(match[1], 10) : null;
     return { raw: json.response, riskScore, model: json.model, analyzedAt: new Date().toISOString() };
   } catch (err) {
-    clearTimeout(timeout);
+    clearInterval(timeout);
     throw err;
   }
 }
@@ -397,7 +432,7 @@ async function runPredictorAgent() {
   if (buyQueue.length === 0) return;
   const token = buyQueue.shift()!;
   const tag = `[${token.symbol}]`;
-  
+   
   log("PREDICT", `Processing AI Risk Profile evaluation for ${tag}`);
 
   try {
@@ -425,7 +460,7 @@ async function runPredictorAgent() {
 async function runExecutionerAgent() {
   if (executionQueue.length === 0) return;
   const { token, riskScore } = executionQueue.shift()!;
-  
+   
   log("BUYER", `Processing transaction confirmation layer for [${token.symbol}]`);
 
   try {
@@ -452,7 +487,7 @@ async function runRiskManagerAgent() {
 
   for (let i = wallet.positions.length - 1; i >= 0; i--) {
     const pos = wallet.positions[i];
-    
+     
     // Simulate current market price updates (-12% to +20% price fluctuations)
     const priceChangeMultiplier = 0.88 + Math.random() * 0.32;
     const currentPrice = parseFloat((pos.buyPrice * priceChangeMultiplier).toFixed(8));
