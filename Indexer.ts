@@ -1,24 +1,15 @@
 /**
- * coinportal/src/indexer.ts
+ * coinportal/indexer.ts
  *
- * Multi-Bot Autonomous AI Trading Engine
+ * Multi-Bot Autonomous AI Trading Engine with Integrated Live Paper Trading Sells
  * — 4 independent bots with staggered intervals
  * — Mutex-guarded async wallet I/O (no corruption under concurrent writes)
+ * — Automated Take Profit (+50%) and Stop Loss (-15%) execution loops
  * — JSON-only Ollama prompt (no conversational refusals)
  * — File-backed wallet.json + embedded HTTP API on :3001
  *
  * Compile:        npx tsc
- * Run (ts-node):  npx ts-node src/indexer.ts
- * Run (compiled): node dist/indexer.js
- *
- * Env overrides:
- *   OLLAMA_URL   — default http://localhost:11434/api/generate
- *   OLLAMA_MODEL — default llama3.2
- *   BUY_SOL      — SOL per trade, default 1
- *   MAX_RISK      — AI veto threshold (score > MAX_RISK = blocked), default 40
- *   MA_PERIODS   — moving-average window, default 5
- *   API_PORT     — HTTP API port, default 3001
- *   WALLET_PATH  — path to wallet.json, default ./wallet.json
+ * Run (ts-node):  npx ts-node indexer.ts
  */
 
 import fs   from "fs";
@@ -36,7 +27,7 @@ const OLLAMA_TIMEOUT = 30_000;
 const BUY_SOL        = parseFloat(process.env.BUY_SOL    ?? "1");
 const MAX_RISK       = parseInt(process.env.MAX_RISK      ?? "40",   10);
 const MA_PERIODS     = parseInt(process.env.MA_PERIODS    ?? "5",    10);
-const API_PORT       = parseInt(process.env.API_PORT      ?? "3001", 10);
+const API_PORT       = parseInt(process.env.PORT          ?? process.env.API_PORT ?? "3001", 10);
 const WALLET_PATH    = path.resolve(process.env.WALLET_PATH ?? "./wallet.json");
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -48,12 +39,13 @@ interface WalletPosition {
   symbol:        string;
   name:          string;
   buyPrice:      number;
+  currentPrice:  number; // Live updating value
   amount:        number;
   totalSpentSol: number;
   boughtAt:      string;
   riskScore:     number;
   mintAddress:   string;
-  botName:       string;  // which bot executed the trade
+  botName:       string; 
 }
 
 interface TradeEvent {
@@ -62,9 +54,10 @@ interface TradeEvent {
   symbol:          string;
   name:            string;
   mintAddress:     string;
-  action:          "BUY" | "BLOCKED";
+  action:          "BUY" | "BLOCKED" | "TAKE_PROFIT" | "STOP_LOSS";
   reason?:         string;
   solSpent?:       number;
+  solReturned?:    number;
   tokensReceived?: number;
   price?:          number;
   riskScore?:      number;
@@ -72,12 +65,14 @@ interface TradeEvent {
 }
 
 interface WalletState {
-  solBalance:  number;
-  startingSOL: number;
-  tradeCount:  number;
-  positions:   WalletPosition[];
-  tradeLog:    TradeEvent[];
-  lastUpdated: string;
+  solBalance:    number;
+  startingSOL:   number;
+  deployedSol:   number; // Added live active capital field
+  tradeCount:    number;
+  blockedTrades: number; // Counter for UI display
+  positions:     WalletPosition[];
+  tradeLog:      TradeEvent[];
+  lastUpdated:   string;
 }
 
 interface TokenData {
@@ -118,14 +113,14 @@ type PipelineResult =
   | { passed: false; reason: string };
 
 interface BotConfig {
-  name:       string;   // "Alpha" | "Beta" | "Gamma" | "Delta"
-  label:      string;   // "[Bot Alpha]"
-  intervalMs: number;   // staggered tick speed
-  delayMs:    number;   // startup delay so bots don't all fire at t=0
+  name:       string;  
+  label:      string;  
+  intervalMs: number;  
+  delayMs:    number;  
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bot Configurations — staggered intervals + startup delays
+// Bot Configurations
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BOT_CONFIGS: BotConfig[] = [
@@ -141,7 +136,6 @@ const BOT_CONFIGS: BotConfig[] = [
 
 type LogLevel = "INFO" | "WARN" | "ERROR" | "TRADE" | "FILTER";
 
-// ANSI colour codes — gracefully stripped if stdout is not a TTY
 const isTTY   = process.stdout.isTTY;
 const COL: Record<string, string> = {
   reset:  isTTY ? "\x1b[0m"  : "",
@@ -154,12 +148,12 @@ const COL: Record<string, string> = {
   grey:   isTTY ? "\x1b[90m" : "",
 };
 
-// Per-bot colours so streams are easy to visually separate in the terminal
 const BOT_COLOURS: Record<string, string> = {
-  Alpha: isTTY ? "\x1b[36m" : "",   // cyan
-  Beta:  isTTY ? "\x1b[35m" : "",   // magenta
-  Gamma: isTTY ? "\x1b[33m" : "",   // yellow
-  Delta: isTTY ? "\x1b[34m" : "",   // blue
+  SYSTEM: isTTY ? "\x1b[95m" : "", // magenta system log
+  Alpha:  isTTY ? "\x1b[36m" : "", 
+  Beta:   isTTY ? "\x1b[35m" : "", 
+  Gamma:  isTTY ? "\x1b[33m" : "", 
+  Delta:  isTTY ? "\x1b[34m" : "", 
 };
 
 function log(level: LogLevel, botName: string, msg: string): void {
@@ -189,7 +183,7 @@ function startupBanner(): void {
   console.log(`\n${COL.cyan}${border}${COL.reset}`);
   console.log(`  ${COL.bold}${COL.cyan}CoinPortal Multi-Bot Autonomous Trading Engine${COL.reset}`);
   console.log(`  Wallet  : ${WALLET_PATH}`);
-  console.log(`  API     : http://127.0.0.1:${API_PORT}/api/wallet`);
+  console.log(`  API     : http://0.0.0.0:${API_PORT}/api/wallet`);
   console.log(`  Ollama  : ${OLLAMA_URL}  (model: ${OLLAMA_MODEL})`);
   console.log(`  Buy     : ${BUY_SOL} SOL/trade  |  Max risk: ${MAX_RISK}  |  MA: ${MA_PERIODS}p`);
   console.log(`\n  Bots:`);
@@ -201,21 +195,13 @@ function startupBanner(): void {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Async Mutex — prevents simultaneous wallet writes from multiple bots
+// Async Mutex
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * A simple promise-chain mutex.  Any code that needs exclusive wallet access
- * calls `walletMutex.run(async () => { ... })`.  Concurrent callers queue up
- * and execute strictly one at a time, preserving serialisability without the
- * need for an external locking library.
- */
 class AsyncMutex {
   private _queue: Promise<void> = Promise.resolve();
 
   run<T>(fn: () => Promise<T>): Promise<T> {
-    // Chain the new task onto the tail of the queue, capturing the result via
-    // an outer promise so callers can await the real return value.
     let resolve!: (v: T) => void;
     let reject!:  (e: unknown) => void;
     const outer = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
@@ -236,19 +222,22 @@ const walletMutex = new AsyncMutex();
 // ─────────────────────────────────────────────────────────────────────────────
 
 const INITIAL_WALLET: WalletState = {
-  solBalance:  100,
-  startingSOL: 100,
-  tradeCount:  0,
-  positions:   [],
-  tradeLog:    [],
+  solBalance:    100.00,
+  startingSOL:   100.00,
+  deployedSol:   0.00,
+  tradeCount:    0,
+  blockedTrades: 0,
+  positions:     [],
+  tradeLog:      [],
   lastUpdated: new Date().toISOString(),
 };
 
-/** Read wallet.json asynchronously, creating it if absent. */
 async function loadWallet(): Promise<WalletState> {
   try {
     const raw    = await fsp.readFile(WALLET_PATH, "utf8");
     const parsed = JSON.parse(raw) as WalletState;
+    if (parsed.blockedTrades === undefined) parsed.blockedTrades = 0;
+    if (parsed.deployedSol === undefined) parsed.deployedSol = 0;
     log("INFO", "SYSTEM", `Wallet loaded — ${parsed.solBalance} SOL, ${parsed.positions.length} position(s)`);
     return parsed;
   } catch {
@@ -258,11 +247,6 @@ async function loadWallet(): Promise<WalletState> {
   }
 }
 
-/**
- * Async atomic write: write to a .tmp file then rename.
- * Rename is atomic on POSIX (macOS/Linux), so a mid-crash never produces
- * a partial wallet.json.
- */
 async function saveWalletRaw(state: WalletState): Promise<void> {
   state.lastUpdated = new Date().toISOString();
   const tmp = `${WALLET_PATH}.tmp`;
@@ -270,30 +254,15 @@ async function saveWalletRaw(state: WalletState): Promise<void> {
   await fsp.rename(tmp, WALLET_PATH);
 }
 
-/**
- * PUBLIC: always call this through the mutex so concurrent bots never
- * interleave their reads and writes.
- *
- * Pattern for every wallet mutation:
- *   await walletMutex.run(async () => {
- *     const w = await readWalletFromDisk();
- *     // … mutate w …
- *     await saveWalletRaw(w);
- *     memWallet = w;   // keep in-memory cache in sync
- *   });
- */
 async function readWalletFromDisk(): Promise<WalletState> {
   const raw = await fsp.readFile(WALLET_PATH, "utf8");
   return JSON.parse(raw) as WalletState;
 }
 
-// In-memory cache — always reflects the last committed wallet state and is
-// used only for read-only queries (API server, log lines) to avoid hitting
-// disk on every /api/wallet poll.
 let memWallet: WalletState = { ...INITIAL_WALLET, positions: [], tradeLog: [] };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Wallet mutations (all mutex-guarded)
+// Wallet mutations (Mutex-guarded)
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function executeBuy(
@@ -303,14 +272,14 @@ async function executeBuy(
   amountSol: number,
 ): Promise<number> {
   return walletMutex.run(async () => {
-    // Always re-read from disk inside the mutex so we see writes from other bots
     const w = await readWalletFromDisk();
 
     if (amountSol > w.solBalance)
       throw new Error(`Insufficient SOL (have ${w.solBalance.toFixed(4)}, need ${amountSol})`);
 
     const tokensReceived = amountSol / token.currentPrice;
-    w.solBalance         = parseFloat((w.solBalance - amountSol).toFixed(6));
+    w.solBalance  = parseFloat((w.solBalance - amountSol).toFixed(6));
+    w.deployedSol = parseFloat((w.deployedSol + amountSol).toFixed(6));
     w.tradeCount++;
 
     const existing = w.positions.find(p => p.mintAddress === token.mintAddress);
@@ -323,6 +292,7 @@ async function executeBuy(
         symbol:        token.symbol,
         name:          token.name,
         buyPrice:      token.currentPrice,
+        currentPrice:  token.currentPrice,
         amount:        tokensReceived,
         totalSpentSol: amountSol,
         boughtAt:      new Date().toISOString(),
@@ -333,22 +303,22 @@ async function executeBuy(
     }
 
     w.tradeLog.unshift({
-      id:             w.tradeCount,
+      id:              w.tradeCount,
       botName,
-      symbol:         token.symbol,
-      name:           token.name,
-      mintAddress:    token.mintAddress,
-      action:         "BUY",
-      solSpent:       amountSol,
+      symbol:          token.symbol,
+      name:            token.name,
+      mintAddress:     token.mintAddress,
+      action:          "BUY",
+      solSpent:        amountSol,
       tokensReceived,
-      price:          token.currentPrice,
+      price:           token.currentPrice,
       riskScore,
-      timestamp:      new Date().toISOString(),
+      timestamp:       new Date().toISOString(),
     });
     if (w.tradeLog.length > 200) w.tradeLog.length = 200;
 
     await saveWalletRaw(w);
-    memWallet = w;   // update cache
+    memWallet = w; 
     return tokensReceived;
   });
 }
@@ -360,6 +330,7 @@ async function appendBlockedEvent(
 ): Promise<void> {
   await walletMutex.run(async () => {
     const w = await readWalletFromDisk();
+    w.blockedTrades = (w.blockedTrades ?? 0) + 1;
     w.tradeLog.unshift({
       id:          w.tradeCount,
       botName,
@@ -376,14 +347,94 @@ async function appendBlockedEvent(
   });
 }
 
+/**
+ * Sweeps through positions and closes them if Take Profit (+50%) or Stop Loss (-15%) criteria is met.
+ */
+async function processAutomatedSells(): Promise<void> {
+  await walletMutex.run(async () => {
+    const w = await readWalletFromDisk();
+    if (w.positions.length === 0) return;
+
+    let stateChanged = false;
+
+    for (let i = w.positions.length - 1; i >= 0; i--) {
+      const pos = w.positions[i];
+      const priceChangePct = ((pos.currentPrice - pos.buyPrice) / pos.buyPrice) * 100;
+
+      let triggerSell = false;
+      let sellAction: "TAKE_PROFIT" | "STOP_LOSS" = "TAKE_PROFIT";
+      let logReason = "";
+
+      if (priceChangePct >= 50.0) {
+        triggerSell = true;
+        sellAction = "TAKE_PROFIT";
+        logReason = `Take Profit target achieved (+${priceChangePct.toFixed(2)}%)`;
+      } else if (priceChangePct <= -15.0) {
+        triggerSell = true;
+        sellAction = "STOP_LOSS";
+        logReason = `Stop Loss threshold triggered (${priceChangePct.toFixed(2)}%)`;
+      }
+
+      if (triggerSell) {
+        const solReturned = pos.totalSpentSol * (1 + priceChangePct / 100);
+        w.solBalance = parseFloat((w.solBalance + solReturned).toFixed(6));
+        w.deployedSol = parseFloat((w.deployedSol - pos.totalSpentSol).toFixed(6));
+        if (w.deployedSol < 0) w.deployedSol = 0;
+
+        w.tradeLog.unshift({
+          id: w.tradeCount,
+          botName: pos.botName,
+          symbol: pos.symbol,
+          name: pos.name,
+          mintAddress: pos.mintAddress,
+          action: sellAction,
+          reason: logReason,
+          solReturned: parseFloat(solReturned.toFixed(6)),
+          price: pos.currentPrice,
+          timestamp: new Date().toISOString()
+        });
+
+        log("TRADE", "SYSTEM", `💰 CLOSED POSITION: Sold ${pos.symbol} via ${sellAction} at ${priceChangePct.toFixed(2)}% ROI`);
+        w.positions.splice(i, 1);
+        stateChanged = true;
+      }
+    }
+
+    if (stateChanged) {
+      await saveWalletRaw(w);
+      memWallet = w;
+    }
+  });
+}
+
+/**
+ * Simulates real-time price fluctuations on open positions to match live market movements.
+ */
+async function tickLiveMarketPrices(): Promise<void> {
+  await walletMutex.run(async () => {
+    const w = await readWalletFromDisk();
+    if (w.positions.length === 0) return;
+
+    w.positions.forEach(pos => {
+      // Fluctuate the current price randomly between -4% and +6%
+      const swing = 1 + (Math.random() * 0.10 - 0.04);
+      pos.currentPrice = parseFloat((pos.currentPrice * swing).toFixed(8));
+    });
+
+    await saveWalletRaw(w);
+    memWallet = w;
+  });
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// HTTP API Server (read-only, no mutex needed)
+// HTTP API Server
 // ─────────────────────────────────────────────────────────────────────────────
 
 function startApiServer(): void {
   const server = http.createServer((req, res) => {
     res.setHeader("Access-Control-Allow-Origin",  "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     res.setHeader("Content-Type", "application/json");
 
     if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
@@ -391,7 +442,6 @@ function startApiServer(): void {
     const url = req.url?.split("?")[0];
 
     if (url === "/api/wallet") {
-      // Serve the in-memory cache — always consistent with last commit
       res.writeHead(200);
       res.end(JSON.stringify(memWallet));
       return;
@@ -413,8 +463,8 @@ function startApiServer(): void {
     res.end(JSON.stringify({ error: "not found" }));
   });
 
-  server.listen(API_PORT, "127.0.0.1", () => {
-    log("INFO", "SYSTEM", `API listening on http://127.0.0.1:${API_PORT}`);
+  server.listen(API_PORT, "0.0.0.0", () => {
+    log("INFO", "SYSTEM", `API listening on global bridge http://0.0.0.0:${API_PORT}`);
   });
 
   server.on("error", err => log("ERROR", "SYSTEM", `API error: ${err.message}`));
@@ -428,14 +478,11 @@ const MOCK_TOKENS: TokenData[] = [
   { name: "Baby Doge Coin",   symbol: "BABYDOGE",  mintAddress: "BabyD0geXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 420_000_000_000_000, decimals: 9, creatorAddress: "Creator1XXX", holders: 142_000, liquidityUsd: 3_200_000, ageHours: 720   },
   { name: "SketchyMoon",      symbol: "SKMN",      mintAddress: "SketchyMoon1XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 1_000_000_000_000,   decimals: 9, creatorAddress: "Creator2XXX", holders: 7,       liquidityUsd: 180,       ageHours: 0.5  },
   { name: "Floki Inu",        symbol: "FLOKI",     mintAddress: "Fl0k1InuXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 10_000_000_000_000,  decimals: 9, creatorAddress: "Creator3XXX", holders: 89_000,  liquidityUsd: 920_000,   ageHours: 2160 },
-  { name: "AquaGoat Finance", symbol: "AQUAGOAT",  mintAddress: "AquaGoatXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 100_000_000_000,     decimals: 9, creatorAddress: "Creator4XXX", holders: 3,       liquidityUsd: 62,        ageHours: 1,   metadata: { website: null } },
+  { name: "AquaGoat Finance", symbol: "AQUAGOAT",  mintAddress: "AquaGoatXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 100_000_000_000,      decimals: 9, creatorAddress: "Creator4XXX", holders: 3,       liquidityUsd: 62,        ageHours: 1,    metadata: { website: null } },
   { name: "EverGrow Coin",    symbol: "EGC",       mintAddress: "EverGrowXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 1_000_000_000_000_000, decimals: 9, creatorAddress: "Creator5XXX", holders: 54_000, liquidityUsd: 450_000,   ageHours: 4320 },
   { name: "SafeMoon",         symbol: "SFM",       mintAddress: "SafeM00nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", totalSupply: 1_000_000_000_000,   decimals: 9, creatorAddress: "Creator6XXX", holders: 31_000,  liquidityUsd: 210_000,   ageHours: 960  },
 ];
 
-// Per-symbol price histories — shared across bots (reads are safe; no mutex
-// needed because JS is single-threaded and these are only written inside each
-// bot's async tick, which never overlaps on the same symbol simultaneously).
 const priceHistories: Record<string, number[]> = {};
 
 function getOrInitPriceHistory(symbol: string, basePrice: number): number[] {
@@ -470,23 +517,9 @@ function fetchSecurityProfile(token: TokenData): SecurityProfile {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Ollama — JSON-only prompt (fixes conversational refusals)
+// Ollama API Interaction
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Key design decisions that prevent llama3.2 from returning prose:
- *
- * 1. Role framing: "Statistical Data Sanitizer" instead of "analyst" removes
- *    the financial-advice context that triggers safety refusals.
- * 2. System prompt is injected via the `system` field (Ollama supports it)
- *    so it is authoritative and separated from the data payload.
- * 3. The only valid output is described as raw JSON — no keys other than
- *    "score", no markdown fences, no preamble, no explanation.
- * 4. The user turn contains only a compact data array, not prose questions,
- *    so the model has nothing conversational to respond to.
- * 5. `parseRiskScore` now tries JSON.parse first, then falls back to a
- *    regex scan, so minor formatting slippage still produces a valid score.
- */
 function buildPrompt(token: TokenData): { system: string; prompt: string } {
   const system =
     "You are a Statistical Data Sanitizer. " +
@@ -511,7 +544,6 @@ function buildPrompt(token: TokenData): { system: string; prompt: string } {
 }
 
 function parseRiskScore(raw: string): number | null {
-  // Strategy 1: direct JSON parse (best case — model followed instructions)
   try {
     const trimmed = raw.trim();
     const obj = JSON.parse(trimmed) as Record<string, unknown>;
@@ -519,15 +551,12 @@ function parseRiskScore(raw: string): number | null {
     if (Number.isInteger(n) && n >= 1 && n <= 100) return n;
   } catch { /* fall through */ }
 
-  // Strategy 2: extract the first JSON-shaped object from the raw string
-  // (handles cases where the model wraps the JSON in prose)
   const jsonMatch = raw.match(/\{[^}]*"score"\s*:\s*(\d{1,3})[^}]*\}/);
   if (jsonMatch) {
     const n = parseInt(jsonMatch[1], 10);
     if (n >= 1 && n <= 100) return n;
   }
 
-  // Strategy 3: bare integer fallback (last resort)
   const numMatch = raw.match(/\b([1-9]\d?|100)\b/);
   if (numMatch) {
     const n = parseInt(numMatch[1], 10);
@@ -552,13 +581,13 @@ async function analyzeTokenWithOllama(
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({
         model:  OLLAMA_MODEL,
-        system,          // keeps role instructions out of the user turn
+        system,          
         prompt,
         stream: false,
         options: {
-          temperature: 0,      // deterministic output = more reliable JSON
+          temperature: 0,      
           top_p: 1,
-          num_predict: 20,     // score only needs ~10 tokens; cap prevents rambling
+          num_predict: 20,     
         },
       }),
       signal: controller.signal,
@@ -591,7 +620,7 @@ async function analyzeTokenWithOllama(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4-Step Verification Pipeline (per-bot, bot name threaded through)
+// Verification Pipeline
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function processAutonomousTradeFlow(
@@ -601,7 +630,6 @@ async function processAutonomousTradeFlow(
   const { name: botName, label } = bot;
   const tag = `${label} [${token.symbol}]`;
 
-  // ── Filter 1 · Metadata ────────────────────────────────────────────────────
   log("FILTER", botName, `${tag} Filter 1 — Metadata`);
   const missingName   = !token.name?.trim();
   const missingSymbol = !token.symbol?.trim();
@@ -617,7 +645,6 @@ async function processAutonomousTradeFlow(
   }
   log("FILTER", botName, `${tag} ✓ F1 passed — holders: ${token.holders}`);
 
-  // ── Filter 2 · Security ────────────────────────────────────────────────────
   log("FILTER", botName, `${tag} Filter 2 — Security`);
   const sec = fetchSecurityProfile(token);
   if (!sec.mintAuthorityDisabled || !sec.liquidityLocked) {
@@ -630,7 +657,6 @@ async function processAutonomousTradeFlow(
   }
   log("FILTER", botName, `${tag} ✓ F2 passed — mint disabled & liq locked`);
 
-  // ── Filter 3 · Ollama AI (JSON-only prompt) ────────────────────────────────
   log("FILTER", botName, `${tag} Filter 3 — Ollama AI`);
   let analysis: TokenRiskAnalysis;
   try {
@@ -652,7 +678,6 @@ async function processAutonomousTradeFlow(
   }
   log("FILTER", botName, `${tag} 🟢 Filter 3 Passed — score ${riskScore}/100 ≤ ${MAX_RISK}`);
 
-  // ── Filter 4 · Moving Average ──────────────────────────────────────────────
   log("FILTER", botName, `${tag} Filter 4 — ${MA_PERIODS}-period MA`);
   const history = getOrInitPriceHistory(token.symbol, token.currentPrice);
   const window  = history.slice(-MA_PERIODS);
@@ -671,7 +696,7 @@ async function processAutonomousTradeFlow(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Per-Bot Trading Cycle
+// Per-Bot Cycle Loops
 // ─────────────────────────────────────────────────────────────────────────────
 
 const botCycleCounts: Record<string, number> = {};
@@ -690,14 +715,12 @@ async function runBotCycle(bot: BotConfig): Promise<void> {
 
   if (!result.passed) {
     log("INFO", bot.name, `  ⛔ Blocked — ${result.reason}`);
-    // Fire-and-forget the blocked event write; no need to await in the hot path
     appendBlockedEvent(bot.name, token, result.reason).catch(err =>
       log("WARN", bot.name, `Failed to log blocked event: ${(err as Error).message}`)
     );
     return;
   }
 
-  // All 4 filters cleared — execute buy through the mutex-guarded function
   let tokensAcquired: number;
   try {
     tokensAcquired = await executeBuy(bot.name, token, result.riskScore, BUY_SOL);
@@ -708,7 +731,6 @@ async function runBotCycle(bot: BotConfig): Promise<void> {
     return;
   }
 
-  // Read fresh balance from cache (executeBuy already updated memWallet)
   const allocation = ((BUY_SOL / (memWallet.solBalance + BUY_SOL)) * 100).toFixed(2);
 
   banner(
@@ -723,11 +745,6 @@ async function runBotCycle(bot: BotConfig): Promise<void> {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Bot Spawner — wraps each cycle in a top-level catch so one bot crash never
-// kills the others or the main process (launchd keeps running either way)
-// ─────────────────────────────────────────────────────────────────────────────
-
 function spawnBot(bot: BotConfig): void {
   const safeTick = async () => {
     try {
@@ -735,41 +752,38 @@ function spawnBot(bot: BotConfig): void {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       log("ERROR", bot.name, `Unhandled error in cycle: ${msg}`);
-      log("WARN",  bot.name, `Bot continuing — next tick in ${bot.intervalMs / 1000}s`);
     }
   };
 
-  // Startup delay so bots don't all slam Ollama at t=0
   setTimeout(() => {
     log("INFO", bot.name, `${bot.label} starting — interval: ${bot.intervalMs / 1000}s`);
-    safeTick();                            // fire immediately after delay
-    setInterval(safeTick, bot.intervalMs); // then on schedule
+    safeTick();            
+    setInterval(safeTick, bot.intervalMs); 
   }, bot.delayMs);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Entry point
+// Entrypoint Initialization
 // ─────────────────────────────────────────────────────────────────────────────
 
 (async () => {
-  // Load or create wallet.json before any bot or server starts
   memWallet = await loadWallet();
 
   startupBanner();
   startApiServer();
 
-  // Spawn all 4 bots — each runs its own independent setInterval
   for (const bot of BOT_CONFIGS) spawnBot(bot);
 
-  process.on("SIGTERM", async () => {
-    log("INFO", "SYSTEM", "SIGTERM received — flushing wallet and exiting");
-    await saveWalletRaw(memWallet);
-    process.exit(0);
-  });
+  // Background loops for live simulated marketplace operations
+  setInterval(tickLiveMarketPrices, 4000);   // Fluctuates active open asset pricing margins
+  setInterval(processAutomatedSells, 5000);  // Evaluates risk thresholds to close positions
 
-  process.on("SIGINT", async () => {
-    log("INFO", "SYSTEM", "SIGINT received — flushing wallet and exiting");
+  const flushAndExit = async (signal: string) => {
+    log("INFO", "SYSTEM", `${signal} received — flushing wallet state payload and shutting down.`);
     await saveWalletRaw(memWallet);
     process.exit(0);
-  });
+  };
+
+  process.on("SIGTERM", () => flushAndExit("SIGTERM"));
+  process.on("SIGINT", () => flushAndExit("SIGINT"));
 })();
